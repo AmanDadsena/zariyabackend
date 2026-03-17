@@ -25,21 +25,64 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-# --- PRODUCT SCHEMAS ---
+# --- CATEGORY SCHEMAS ---
+class CategoryCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class CategoryResponse(BaseModel):
+    id: UUID
+    name: str
+    description: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+# --- VARIANT & IMAGE SCHEMAS ---
+class VariantCreate(BaseModel):
+    name: str
+    sku: Optional[str] = None
+    price_paise: int = Field(..., gt=0)
+    stock_count: int = 0
+
+class VariantResponse(BaseModel):
+    id: UUID
+    name: str
+    sku: Optional[str]
+    price_paise: int
+    stock_count: int
+
+    class Config:
+        from_attributes = True
+
+class ImageResponse(BaseModel):
+    id: UUID
+    image_url: str
+    is_primary: bool
+
+    class Config:
+        from_attributes = True
+
+# --- PRODUCT SCHEMAS (NOW NESTED!) ---
 class ProductCreate(BaseModel):
-    # vendor_id is securely pulled from the login token now!
+    category_id: Optional[UUID] = None
     name: str
     description: str
-    price_paise: int = Field(..., gt=0)
-    image_url: Optional[str] = None
+    
+    # When creating a product, the vendor must provide at least one variant (e.g., standard size and price)
+    variants: list[VariantCreate]
 
 class ProductResponse(BaseModel):
     id: UUID
     name: str
     description: Optional[str]
     seo_meta_tag: Optional[str]
-    price_paise: int
-    image_url: Optional[str]
+    is_active: bool
+    
+    # FastAPI will now automatically bundle the category, variants, and images when fetching a product!
+    category: Optional[CategoryResponse] = None
+    variants: list[VariantResponse] = []
+    images: list[ImageResponse] = []
 
     class Config:
         from_attributes = True
